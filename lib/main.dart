@@ -1,15 +1,48 @@
 import 'dart:developer';
 
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/material.dart';
+import 'package:get_ip_address/get_ip_address.dart';
+
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
-}
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  try {
+    /// Initialize Ip Address
+    var ipAddress = IpAddress(type: RequestType.json);
+
+    /// Get the IpAddress based on requestType.
+    dynamic data = await ipAddress.getIpAddress();
+    print(data.toString());
+    runApp(App(
+      ipAddress: data,
+    ));
+  } on IpAddressException catch (exception) {
+    /// Handle the exception.
+    print(exception.message);
+  }
+
+  // runApp(const MyApp());
+}
+class App extends StatelessWidget {
+  dynamic ipAddress;
+  App({super.key, required this.ipAddress});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text(ipAddress.toString()),
+        ),
+      ),
+    );
+  }
+}
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -42,13 +75,13 @@ class _MyHomePageState extends State<MyHomePage> {
     FirebaseDynamicLinks.instance.onLink.listen((event) {
       // Handle dynamic link data
       handleDynamicLink(event);
-    }).onError((e){
+    }).onError((e) {
       // Handle error
       log("Error processing dynamic link: ${e.message}");
     });
 
     final PendingDynamicLinkData? data =
-    await FirebaseDynamicLinks.instance.getInitialLink();
+        await FirebaseDynamicLinks.instance.getInitialLink();
     if (data != null) {
       // Handle initial link data
       handleDynamicLink(data);
@@ -74,13 +107,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String createReferralLink() {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
-      uriPrefix: 'https://your-app.page.link',
-      link: Uri.parse('https://your-app.com/referral?referral=12345'),
+      uriPrefix: 'https://com.example.flutter_dynamic_link',
+      link: Uri.parse('https://com.example.flutter_dynamic_link/referral?referral=12345'),
       androidParameters: const AndroidParameters(
-        packageName: 'com.yourapp.package',
+        packageName: 'com.example.flutter_dynamic_link',
       ),
       iosParameters: const IOSParameters(
-        bundleId: 'com.yourapp.package',
+        bundleId: 'com.example.flutterDynamicLink',
         appStoreId: '123456789',
       ),
     );
